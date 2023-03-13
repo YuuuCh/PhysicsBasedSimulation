@@ -8,6 +8,22 @@
 #define MIDPOINT 2
 // Do Not Change
 
+class Point {
+public:
+	Point(Vec3 p, Vec3 v, bool fixed) :position(p), velocity(v), isFixed(fixed) {}
+	Vec3 position;
+	Vec3 velocity;
+	Vec3 force;
+	bool isFixed;
+};
+
+class Spring {
+public:
+	Spring(int p1, int p2, float length) :point1(p1), point2(p2), restlength(length) {}
+	int point1;
+	int point2;
+	float restlength;
+};
 
 class MassSpringSystemSimulator:public Simulator{
 public:
@@ -36,6 +52,7 @@ public:
 	Vec3 getPositionOfMassPoint(int index);
 	Vec3 getVelocityOfMassPoint(int index);
 	void applyExternalForce(Vec3 force);
+	void advanceEuler(float timeStep);
 	
 	// Do Not Change
 	void setIntegrator(int integrator) {
@@ -48,6 +65,8 @@ private:
 	float m_fStiffness;
 	float m_fDamping;
 	int m_iIntegrator;
+	std::vector<Point> points;
+	std::vector<Spring> springs;
 
 	// UI Attributes
 	Vec3 m_externalForce;
