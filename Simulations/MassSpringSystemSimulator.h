@@ -10,7 +10,7 @@
 
 class Point {
 public:
-	Point(Vec3 p, Vec3 v, bool fixed) :position(p), velocity(v), isFixed(fixed) {}
+	Point(Vec3 p, Vec3 v, bool fixed) :position(p), velocity(v), force(Vec3()), isFixed(fixed) {}
 	Vec3 position;
 	Vec3 velocity;
 	Vec3 force;
@@ -51,8 +51,9 @@ public:
 	int getNumberOfSprings();
 	Vec3 getPositionOfMassPoint(int index);
 	Vec3 getVelocityOfMassPoint(int index);
-	void applyExternalForce(Vec3 force);
+	void applyExternalForce();
 	void advanceEuler(float timeStep);
+	void advanceMidpoint(float timeStep);
 	
 	// Do Not Change
 	void setIntegrator(int integrator) {
