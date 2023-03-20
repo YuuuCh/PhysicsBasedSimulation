@@ -39,6 +39,8 @@ void MassSpringSystemSimulator::drawFrame(ID3D11DeviceContext* pd3dImmediateCont
 
 void MassSpringSystemSimulator::notifyCaseChanged(int testCase) {
 	m_iTestCase = testCase;
+	constexpr int nodes = 11;
+	constexpr float restlen = 0.2;
 	switch (m_iTestCase){
 	case 0:
 		cout << "Single Spring!\n";
@@ -52,24 +54,29 @@ void MassSpringSystemSimulator::notifyCaseChanged(int testCase) {
 		cout << "Complex Springs!\n";
 		points.clear();
 		springs.clear();
-		for (int i = 0; i < 3; ++i) {
-			for (int j = 0; j < 3; ++j) {
-				addMassPoint(Vec3(i, 1, j), Vec3(), (i == 0 && j == 0) || (i == 0 && j == 2)|| (i == 2 && j == 0) || (i == 2 && j == 2));
+		setMass(1);
+		setStiffness(100);
+		for (int i = 0; i < nodes; ++i) {
+			for (int j = 0; j < nodes; ++j) {
+				addMassPoint(Vec3(i * restlen - 1, 1, j * restlen - 1), Vec3(), 
+					(i == 0 && j == 0) || (i == 0 && j == nodes - 1) /*|| 
+					(i == nodes - 1 && j == 0) || (i == nodes - 1 && j == nodes - 1)*/
+				);
 			}
 		}
-		for (int i = 0; i < 2; ++i) {
-			for (int j = 0; j < 2; ++j) {
-				addSpring(3 * i + j, 3 * i + j + 1, 1);
-				addSpring(3 * i + j, 3 * i + j + 3, 1);
-				addSpring(3 * i + j, 3 * i + j + 4, std::sqrt(2));
-				addSpring(3 * i + j + 1, 3 * i + j + 3, std::sqrt(2));
+		for (int i = 0; i < nodes - 1; ++i) {
+			for (int j = 0; j < nodes - 1; ++j) {
+				addSpring(nodes * i + j, nodes * i + j + 1, restlen);
+				addSpring(nodes * i + j, nodes * i + j + nodes, restlen);
+				addSpring(nodes * i + j, nodes * i + j + nodes + 1, restlen * std::sqrt(2));
+				addSpring(nodes * i + j + 1, nodes * i + j + nodes, restlen * std::sqrt(2));
 			}
 		}
-		for (int j = 0; j < 2; ++j) {
-			addSpring(3 * 2 + j, 3 * 2 + j + 1, 1);
+		for (int j = 0; j < nodes - 1; ++j) {
+			addSpring(nodes * (nodes - 1) + j, nodes * (nodes - 1) + j + 1, restlen);
 		}
-		for (int i = 0; i < 2; ++i) {
-			addSpring(3 * i + 2, 3 * i + 2 + 3, 1);
+		for (int i = 0; i < nodes - 1; ++i) {
+			addSpring(nodes * i + (nodes - 1), nodes * i + (nodes - 1) + nodes, restlen);
 		}
 		break;
 	default:
@@ -112,7 +119,7 @@ void MassSpringSystemSimulator::advanceEuler(float timeStep) {
 	for (auto& point : points) {
 		if (!point.isFixed) {
 			point.position += point.velocity * timeStep;
-			point.velocity += point.force * timeStep / m_fMass;
+			point.velocity += point.force / m_fMass * timeStep;
 		}
 	}
 }
@@ -164,6 +171,12 @@ void MassSpringSystemSimulator::simulateTimestep(float timeStep) {
 		break;
 	default:
 		break;
+	}
+	// boundary condition
+	for (auto& point : points) {
+		if (point.position.y < -1) {
+			point.position.y = -1;
+		}
 	}
 }
 
@@ -226,7 +239,7 @@ void MassSpringSystemSimulator::applyExternalForce() {
 		break;
 	case 1:
 		for (auto& point : points) {
-			point.force = Vec3(0,-9.8,0);
+			point.force = Vec3(0,-0.3 * m_fMass,0);
 		}
 		break;
 	default:
