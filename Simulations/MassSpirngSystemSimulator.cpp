@@ -5,16 +5,29 @@ MassSpringSystemSimulator::MassSpringSystemSimulator() {
 	setStiffness(40);
 	setDampingFactor(0);
 	setIntegrator(0);
+	m_fGravity = 0;
 }
 
 const char* MassSpringSystemSimulator::getTestCasesStr() {
-	return "Single Spring,Complex";
+	return "Simple one-step,Simple Euler,Simple Midpoint,Complex";
 }
 
 void MassSpringSystemSimulator::initUI(DrawingUtilitiesClass* DUC) {
 	this->DUC = DUC;
+	TwAddVarRW(DUC->g_pTweakBar, "Gravity", TW_TYPE_FLOAT, &m_fGravity, "step=0.1 min=0");
 	TwType TW_TYPE_INTEGRATOR = TwDefineEnumFromString("Integrator", "Euler,Leap Forg,Midpoint");
-	TwAddVarRW(DUC->g_pTweakBar, "Integrator", TW_TYPE_INTEGRATOR, &m_iIntegrator, "");
+	switch (m_iTestCase) {
+	case 0:
+		TwAddVarRW(DUC->g_pTweakBar, "Integrator", TW_TYPE_INTEGRATOR, &m_iIntegrator, "");
+		break;
+	case 1:break;
+	case 2:break;
+	case 3:
+		TwAddVarRW(DUC->g_pTweakBar, "Integrator", TW_TYPE_INTEGRATOR, &m_iIntegrator, "");
+		break;
+	default:
+		break;
+	}
 }
 
 void MassSpringSystemSimulator::reset() {
@@ -39,23 +52,45 @@ void MassSpringSystemSimulator::drawFrame(ID3D11DeviceContext* pd3dImmediateCont
 
 void MassSpringSystemSimulator::notifyCaseChanged(int testCase) {
 	m_iTestCase = testCase;
+	points.clear();
+	springs.clear();
 	constexpr int nodes = 11;
 	constexpr float restlen = 0.2;
 	switch (m_iTestCase){
 	case 0:
-		cout << "Single Spring!\n";
-		points.clear();
-		springs.clear();
+		cout << "Single one-step!\n";
+		setMass(10);
+		setStiffness(40);
+		m_fGravity = 0;
 		addMassPoint(Vec3(0, 0, 0), Vec3(-1, 0, 0), false);
 		addMassPoint(Vec3(0, 2, 0), Vec3(1, 0, 0), false);
 		addSpring(0, 1, 1);
 		break;
 	case 1:
+		cout << "Single Euler!\n";
+		setIntegrator(EULER);
+		setMass(10);
+		setStiffness(40);
+		m_fGravity = 0;
+		addMassPoint(Vec3(0, 0, 0), Vec3(-1, 0, 0), false);
+		addMassPoint(Vec3(0, 2, 0), Vec3(1, 0, 0), false);
+		addSpring(0, 1, 1);
+		break;
+	case 2:
+		cout << "Single Midpoint!\n";
+		setIntegrator(MIDPOINT);
+		setMass(10);
+		setStiffness(40);
+		m_fGravity = 0;
+		addMassPoint(Vec3(0, 0, 0), Vec3(-1, 0, 0), false);
+		addMassPoint(Vec3(0, 2, 0), Vec3(1, 0, 0), false);
+		addSpring(0, 1, 1);
+		break;
+	case 3:
 		cout << "Complex Springs!\n";
-		points.clear();
-		springs.clear();
 		setMass(1);
 		setStiffness(100);
+		m_fGravity = 0.3;
 		for (int i = 0; i < nodes; ++i) {
 			for (int j = 0; j < nodes; ++j) {
 				addMassPoint(Vec3(i * restlen - 1, 1, j * restlen - 1), Vec3(), 
@@ -81,7 +116,7 @@ void MassSpringSystemSimulator::notifyCaseChanged(int testCase) {
 		break;
 	default:
 		cout << "Empty Test!\n";
-		break;
+		assert(false);
 	}
 }
 
@@ -120,6 +155,36 @@ void MassSpringSystemSimulator::advanceEuler(float timeStep) {
 		if (!point.isFixed) {
 			point.position += point.velocity * timeStep;
 			point.velocity += point.force / m_fMass * timeStep;
+		}
+	}
+}
+
+void MassSpringSystemSimulator::advanceLeapfrog(float timeStep) {
+	applyExternalForce();
+	for (const auto& spring : springs) {
+		int p1 = spring.point1;
+		int p2 = spring.point2;
+		Vec3 x12 = getPositionOfMassPoint(p1) - getPositionOfMassPoint(p2);
+		Vec3 force = m_fStiffness * (norm(x12) - spring.restlength) * getNormalized(x12);
+		points[p1].force -= force;
+		points[p2].force += force;
+	}
+	for (auto& point : points) {
+		if (!point.isFixed) {
+			point.position += point.velocity * timeStep + point.force / m_fMass * timeStep * timeStep / 2;
+		}
+	}
+	for (const auto& spring : springs) {
+		int p1 = spring.point1;
+		int p2 = spring.point2;
+		Vec3 x12 = getPositionOfMassPoint(p1) - getPositionOfMassPoint(p2);
+		Vec3 force = m_fStiffness * (norm(x12) - spring.restlength) * getNormalized(x12);
+		points[p1].force -= force;
+		points[p2].force += force;
+	}
+	for (auto& point : points) {
+		if (!point.isFixed) {
+			point.velocity += point.force / m_fMass * timeStep / 2;
 		}
 	}
 }
@@ -165,13 +230,22 @@ void MassSpringSystemSimulator::simulateTimestep(float timeStep) {
 		advanceEuler(timeStep);
 		break;
 	case LEAPFROG:
+		advanceLeapfrog(timeStep);
 		break;
 	case MIDPOINT:
 		advanceMidpoint(timeStep);
 		break;
 	default:
-		break;
+		assert(false);
 	}
+
+	if (m_iTestCase == 0) {
+		for (auto& point : points) {
+			std::cout << point.position << std::endl;
+			std::cout << point.velocity << std::endl;
+		}
+	}
+
 	// boundary condition
 	for (auto& point : points) {
 		if (point.position.y < -1) {
@@ -233,13 +307,11 @@ Vec3 MassSpringSystemSimulator::getVelocityOfMassPoint(int index) {
 void MassSpringSystemSimulator::applyExternalForce() {
 	switch (m_iTestCase) {
 	case 0:
-		for (auto& point : points) {
-			point.force = Vec3();
-		}
-		break;
 	case 1:
+	case 2:
+	case 3:
 		for (auto& point : points) {
-			point.force = Vec3(0,-0.3 * m_fMass,0);
+			point.force = m_fMass * Vec3(0, -m_fGravity, 0);
 		}
 		break;
 	default:

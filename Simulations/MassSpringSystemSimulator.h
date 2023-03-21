@@ -53,6 +53,7 @@ public:
 	Vec3 getVelocityOfMassPoint(int index);
 	void applyExternalForce();
 	void advanceEuler(float timeStep);
+	void advanceLeapfrog(float timeStep);
 	void advanceMidpoint(float timeStep);
 	
 	// Do Not Change
@@ -66,6 +67,7 @@ private:
 	float m_fStiffness;
 	float m_fDamping;
 	int m_iIntegrator;
+	float m_fGravity;
 	std::vector<Point> points;
 	std::vector<Spring> springs;
 
