@@ -21,8 +21,8 @@ using namespace GamePhysics;
 //#define ADAPTIVESTEP
 
 //#define TEMPLATE_DEMO
-#define MASS_SPRING_SYSTEM
-//#define RIGID_BODY_SYSTEM
+//#define MASS_SPRING_SYSTEM
+#define RIGID_BODY_SYSTEM
 //#define SPH_SYSTEM
 
 #ifdef TEMPLATE_DEMO
@@ -32,7 +32,7 @@ using namespace GamePhysics;
 #include "MassSpringSystemSimulator.h"
 #endif
 #ifdef RIGID_BODY_SYSTEM
-//#include "RigidBodySystemSimulator.h"
+#include "RigidBodySystemSimulator.h"
 #endif
 #ifdef SPH_SYSTEM
 //#include "SPHSystemSimulator.h"
@@ -249,6 +249,7 @@ void CALLBACK OnFrameMove( double dTime, float fElapsedTime, void* pUserContext 
 		}
 		initTweakBar();
 		g_pSimulator->notifyCaseChanged(g_iTestCase);
+#ifdef MASS_SPRING_SYSTEM
 		switch (g_iTestCase) {
 		case 0:
 			g_bSimulateByStep = true;
@@ -266,6 +267,26 @@ void CALLBACK OnFrameMove( double dTime, float fElapsedTime, void* pUserContext 
 		default:
 			assert(false);
 		}
+#endif
+#ifdef RIGID_BODY_SYSTEM
+		switch (g_iTestCase) {
+		case 0:
+			g_bSimulateByStep = true;
+			g_fTimestep = 2;
+			break;
+		case 1:
+		case 2:
+			g_bSimulateByStep = false;
+			g_fTimestep = 0.01;
+			break;
+		case 3:
+			g_bSimulateByStep = false;
+			g_fTimestep = 0.0005;
+			break;
+		default:
+			assert(false);
+		}
+#endif
 		g_pSimulator->initUI(g_pDUC);
 		g_iPreTestCase = g_iTestCase;
 	}
@@ -382,7 +403,7 @@ int main(int argc, char* argv[])
 	g_pSimulator= new MassSpringSystemSimulator();
 #endif
 #ifdef RIGID_BODY_SYSTEM
-	//g_pSimulator= new RigidBodySystemSimulator();
+	g_pSimulator= new RigidBodySystemSimulator();
 #endif
 #ifdef SPH_SYSTEM
 	//g_pSimulator= new SPHSystemSimulator();
