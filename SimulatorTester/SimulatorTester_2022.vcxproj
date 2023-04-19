@@ -163,7 +163,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="PublicMassSpringSystemTests.cpp" />
     <ClCompile Include="PublicRigidBodiesTests.cpp" />
   </ItemGroup>
   <ItemGroup>

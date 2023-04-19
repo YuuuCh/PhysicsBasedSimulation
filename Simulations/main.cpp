@@ -275,9 +275,12 @@ void CALLBACK OnFrameMove( double dTime, float fElapsedTime, void* pUserContext 
 			g_fTimestep = 2;
 			break;
 		case 1:
-		case 2:
 			g_bSimulateByStep = false;
 			g_fTimestep = 0.01;
+			break;
+		case 2:
+			g_bSimulateByStep = false;
+			g_fTimestep = 0.001;
 			break;
 		case 3:
 			g_bSimulateByStep = false;
@@ -340,7 +343,9 @@ void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext*
 	pd3dImmediateContext->ClearDepthStencilView( pDSV, D3D11_CLEAR_DEPTH, 1.0f, 0 );
 
     // Draw floor
+#ifndef RIGID_BODY_SYSTEM
     g_pDUC->DrawFloor(pd3dImmediateContext);
+#endif
 
     // Draw axis box
      g_pDUC->DrawBoundingBox(pd3dImmediateContext);
