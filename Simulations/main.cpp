@@ -22,7 +22,8 @@ using namespace GamePhysics;
 
 //#define TEMPLATE_DEMO
 //#define MASS_SPRING_SYSTEM
-#define RIGID_BODY_SYSTEM
+//#define RIGID_BODY_SYSTEM
+#define FLIP_SYSTEM
 //#define SPH_SYSTEM
 
 #ifdef TEMPLATE_DEMO
@@ -33,6 +34,9 @@ using namespace GamePhysics;
 #endif
 #ifdef RIGID_BODY_SYSTEM
 #include "RigidBodySystemSimulator.h"
+#endif
+#ifdef FLIP_SYSTEM
+#include "flip.h"
 #endif
 #ifdef SPH_SYSTEM
 //#include "SPHSystemSimulator.h"
@@ -267,8 +271,7 @@ void CALLBACK OnFrameMove( double dTime, float fElapsedTime, void* pUserContext 
 		default:
 			assert(false);
 		}
-#endif
-#ifdef RIGID_BODY_SYSTEM
+#elif RIGID_BODY_SYSTEM
 		switch (g_iTestCase) {
 		case 0:
 			g_bSimulateByStep = true;
@@ -409,6 +412,9 @@ int main(int argc, char* argv[])
 #endif
 #ifdef RIGID_BODY_SYSTEM
 	g_pSimulator= new RigidBodySystemSimulator();
+#endif
+#ifdef FLIP_SYSTEM
+	g_pSimulator = new FlipSimulator();
 #endif
 #ifdef SPH_SYSTEM
 	//g_pSimulator= new SPHSystemSimulator();
